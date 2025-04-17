@@ -1,0 +1,35 @@
+name: Auto Deploy
+
+# Trigger the workflow on push events to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # The runner type can be adjusted depending on your needs
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up SSH key for remote server
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        # To avoid "Host key verification failed" errors, add the server to known hosts
+        ssh-keyscan -H ${{ secrets.HOST }} >> ~/.ssh/known_hosts
+
+    - name: Run deployment script remotely
+      env:
+        HOST: ${{ secrets.HOST }}  # Set the environment variable HOST
+        GIT: ${{ secrets.TOKEN_GITHUB }} # Set the environment variable GIT
+      run: |
+        chmod +x ./.github/workflows/RG_BackEnd.sh
+        bash ./.github/workflows/RG_BackEnd.sh  # This will access the environment variable HOST and GIT
+
+    - name: Clean up or notify
+      run: |
+        echo "Deployment completed..!!!!!"
